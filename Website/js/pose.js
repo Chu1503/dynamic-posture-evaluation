@@ -22,6 +22,15 @@ function calculateAngle(a, b, c) {
 function startPoseDetection() {
   document.body.classList.add('loaded');
 
+  // Ensure that the video element has a stream source
+  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+    videoElement.srcObject = stream;
+    videoElement.play();
+  }).catch(error => {
+    console.error("Error accessing webcam: ", error);
+    alert("Could not access webcam. Please check permissions.");
+  });
+
   if (!pose) {
     pose = new Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.2/${file}`,
@@ -47,7 +56,12 @@ function startPoseDetection() {
 // Function to stop pose detection
 function stopPoseDetection() {
   if (camera) {
-    camera.stop();  // Stop the camera feed
+    // Manually stop the video stream if the Camera instance does not have a stop method
+    const stream = videoElement.srcObject;
+    if (stream) {
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());  // Stop each track in the stream
+    }
     videoElement.srcObject = null;  // Remove the video stream
     camera = null;
   }
@@ -61,6 +75,7 @@ function stopPoseDetection() {
 
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);  // Clear the canvas
 }
+
 
 // Function to draw connectors with conditional color
 function drawConnectorsConditional(ctx, landmarks, connections) {
